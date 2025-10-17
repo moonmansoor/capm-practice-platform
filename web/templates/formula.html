@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPM Formula Reference</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">CAPM Mock Exam</a>
+            <span class="navbar-text text-light">Formula Reference</span>
+        </div>
+    </nav>
+
+    <div class="global-alert-wrapper" id="globalAlertContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="container my-5">
+        <div class="text-center mb-4">
+            <h1 class="h3">CAPM Formulas to Memorize</h1>
+            <p class="text-muted mb-0">Quick reference covering schedule, cost, communications, procurement, and benefit ratios.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                <a href="/earned-value-drill" class="btn btn-primary">Practice Earned Value Drill (10 Questions)</a>
+                <a href="/pert-drill" class="btn btn-outline-primary">Practice PERT Drill (10 Questions)</a>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Schedule & PERT</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>PERT Expected Time (TE):</strong> (O + 4M + P) / 6</li>
+                            <li><strong>Standard Deviation (sigma):</strong> (P - O) / 6</li>
+                            <li><strong>Variance:</strong> [(P - O) / 6]^2</li>
+                        </ul>
+                        <p class="mb-0 text-muted">O = optimistic, M = most likely, P = pessimistic. Critical path is the longest path with zero or least float.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Earned Value (Cost)</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Core Definitions</h6>
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>Planned Value (PV):</strong> Planned % complete * BAC</li>
+                            <li><strong>Earned Value (EV):</strong> Actual % complete * BAC</li>
+                            <li><strong>Actual Cost (AC):</strong> Sum of actual costs to date</li>
+                        </ul>
+                        <h6>Performance Metrics</h6>
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>Schedule Variance (SV):</strong> EV - PV</li>
+                            <li><strong>Cost Variance (CV):</strong> EV - AC</li>
+                            <li><strong>Schedule Performance Index (SPI):</strong> EV / PV</li>
+                            <li><strong>Cost Performance Index (CPI):</strong> EV / AC</li>
+                        </ul>
+                        <h6>Forecasting</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>EAC (CPI holds):</strong> BAC / CPI</li>
+                            <li><strong>EAC (one-time issue):</strong> AC + (BAC - EV)</li>
+                            <li><strong>EAC (cost and schedule):</strong> AC + (BAC - EV) / (CPI * SPI)</li>
+                            <li><strong>Estimate to Complete (ETC):</strong> EAC - AC</li>
+                            <li><strong>Variance at Completion (VAC):</strong> BAC - EAC</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-warning">
+                        <h5 class="mb-0">Communications & Procurement</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Communications</h6>
+                        <ul class="list-unstyled mb-4">
+                            <li><strong>Channels:</strong> N (N - 1) / 2</li>
+                            <li class="text-muted mb-0">N = number of stakeholders.</li>
+                        </ul>
+                        <h6>Procurement</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li><strong>Point of Total Assumption (PTA):</strong> (Ceiling Price - Target Price) * Buyer Share Ratio + Target Cost</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Benefit & Financial Ratios</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li><strong>Benefit-Cost Ratio (BCR):</strong> Benefit / Cost</li>
+                            <li><strong>Return on Investment (ROI):</strong> (Gain - Cost) / Cost</li>
+                            <li><strong>Net Present Value (NPV):</strong> Sum of discounted cash flows (focus on interpretation)</li>
+                        </ul>
+                        <p class="text-muted mb-0">Positive NPV and ROI > 0 typically support project selection.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Index Interpretation & Examples</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-3">
+                            <li><strong>SPI ≥ 1.0:</strong> On/ ahead of schedule (delivering value as fast as planned).</li>
+                            <li><strong>SPI &lt; 1.0:</strong> Behind schedule.</li>
+                            <li><strong>CPI ≥ 1.0:</strong> On/ under budget (earning ≥ RM1.00 of value per RM1.00 spent).</li>
+                            <li><strong>CPI &lt; 1.0:</strong> Over budget (e.g., CPI = 0.80 → only RM0.80 of value earned per RM1.00 spent).</li>
+                        </ul>
+                        <p class="text-muted mb-0">Use these cues to explain performance in exams and stakeholder reports quickly.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Project Management Plan Contents</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">The project management plan integrates and tailors:</p>
+                        <ul class="list-unstyled mb-0">
+                            <li>Scope, schedule, and cost baselines</li>
+                            <li>Subsidiary plans: scope, schedule, cost, quality, resource, communications, risk, procurement, stakeholder</li>
+                            <li>Tailoring decisions, change management approach, and performance measurement baseline</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="/" class="btn btn-outline-secondary">Back to Home</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

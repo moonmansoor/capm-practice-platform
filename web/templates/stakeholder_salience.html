@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stakeholder Salience Drill</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">CAPM Mock Exam</a>
+            <span class="navbar-text text-white">Stakeholder Salience Practice</span>
+        </div>
+    </nav>
+
+    <div class="global-alert-wrapper" id="globalAlertContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="container py-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">Stakeholder Salience Drill</h1>
+                <p class="text-muted mb-0">Work through 10 scenario questions covering power, legitimacy, and urgency so you can classify stakeholders accurately and plan engagement.</p>
+            </div>
+            <div class="mt-3 mt-md-0">
+                <button id="refreshBtn" class="btn btn-primary">Load 10 New Questions</button>
+            </div>
+        </div>
+
+        <div class="alert alert-secondary" role="alert">
+            <strong>Tip:</strong> Dominant = power + legitimacy, Dependent = legitimacy + urgency, Dangerous = power + urgency, Definitive = all three. Use the combinations to guide your answers.
+        </div>
+
+        <div id="statusAlert" class="alert alert-info d-none" role="alert"></div>
+
+        <div id="questionsContainer" class="mt-4"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        const statusAlert = document.getElementById('statusAlert');
+        const questionsContainer = document.getElementById('questionsContainer');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        refreshBtn.addEventListener('click', () => loadQuestions(true));
+
+        async function loadQuestions(showMessage = false) {
+            setStatus('Loading 10 stakeholder salience scenarios...', 'info');
+            questionsContainer.innerHTML = '';
+            refreshBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/stakeholder-salience/questions?count=10');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                if (!Array.isArray(data) || !data.length) {
+                    setStatus('No stakeholder salience questions were found. Verify the seed data.', 'warning');
+                    return;
+                }
+                renderQuestions(data);
+                if (showMessage) {
+                    setStatus('Loaded a new set of salience questions.', 'success');
+                } else {
+                    clearStatus();
+                }
+            } catch (error) {
+                console.error('Failed to load salience questions:', error);
+                setStatus('Unable to load questions right now. Please try again shortly.', 'danger');
+            } finally {
+                refreshBtn.disabled = false;
+            }
+        }
+
+        function renderQuestions(questions) {
+            questionsContainer.innerHTML = '';
+
+            questions.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'card mb-3 shadow-sm';
+
+                const header = document.createElement('div');
+                header.className = 'card-header bg-light';
+                header.innerHTML = `<strong>Question ${index + 1}</strong>`;
+                card.appendChild(header);
+
+                const body = document.createElement('div');
+                body.className = 'card-body';
+
+                const prompt = document.createElement('p');
+                prompt.className = 'fw-semibold';
+                prompt.textContent = item.prompt;
+                body.appendChild(prompt);
+
+                const choiceGroup = document.createElement('div');
+                choiceGroup.className = 'd-flex flex-column gap-2';
+
+                item.choices.forEach(choice => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn btn-outline-primary text-start';
+                    button.dataset.correct = choice.is_correct ? 'true' : 'false';
+                    button.textContent = `${choice.label}. ${choice.text}`;
+                    button.addEventListener('click', () => handleChoiceSelection(button, choiceGroup, explanation));
+                    choiceGroup.appendChild(button);
+                });
+
+                body.appendChild(choiceGroup);
+
+                const explanation = document.createElement('div');
+                explanation.className = 'alert alert-secondary mt-3 d-none';
+                explanation.innerHTML = `<strong>Explanation:</strong> ${item.explanation}`;
+                body.appendChild(explanation);
+
+                card.appendChild(body);
+                questionsContainer.appendChild(card);
+            });
+        }
+
+        function handleChoiceSelection(selectedButton, choiceGroup, explanation) {
+            const buttons = Array.from(choiceGroup.querySelectorAll('button'));
+            const wasCorrect = selectedButton.dataset.correct === 'true';
+
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                const isCorrect = btn.dataset.correct === 'true';
+                btn.classList.remove('btn-outline-primary', 'btn-outline-danger', 'btn-danger', 'btn-success');
+
+                if (isCorrect) {
+                    btn.classList.add('btn-success');
+                } else {
+                    btn.classList.add('btn-outline-danger');
+                }
+            });
+
+            if (!wasCorrect) {
+                selectedButton.classList.remove('btn-outline-danger');
+                selectedButton.classList.add('btn-danger');
+            }
+
+            explanation.classList.remove('d-none');
+            explanation.classList.toggle('alert-success', wasCorrect);
+            explanation.classList.toggle('alert-secondary', !wasCorrect);
+        }
+
+        function setStatus(message, type) {
+            statusAlert.textContent = message;
+            statusAlert.className = `alert alert-${type}`;
+            statusAlert.classList.remove('d-none');
+        }
+
+        function clearStatus() {
+            statusAlert.classList.add('d-none');
+        }
+
+        loadQuestions(false);
+    </script>
+</body>
+</html>

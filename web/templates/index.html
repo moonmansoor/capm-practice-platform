@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPM Mock Exam System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">CAPM Mock Exam</a>
+        </div>
+    </nav>
+
+    <div class="global-alert-wrapper" id="globalAlertContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="mb-0">Welcome to CAPM Mock Exam System</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h5>About This System:</h5>
+                            <ul class="mb-0">
+                                <li>Questions are <strong>100% based on PMBOK 7th Edition</strong> and <strong>PMI ECO 2024</strong></li>
+                                <li>Questions cover <strong>4 main domains:</strong>
+                                    <ul>
+                                        <li>Project Management Fundamentals (36%)</li>
+                                        <li>Predictive Plan-Based Methodologies (17%)</li>
+                                        <li>Agile Frameworks/Methodologies (20%)</li>
+                                        <li>Business Analysis Frameworks (27%)</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Instant results</strong> with detailed explanations</li>
+                                <li><strong>PDF report</strong> available for download</li>
+                                <li>Questions are intentionally challenging for realistic exam preparation</li>
+                            </ul>
+                            <div class="mt-3">
+                                <a class="btn btn-outline-dark btn-sm" href="/formula" target="_blank" rel="noopener">
+                                    Open Formula Reference
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card mt-4" id="historyCard">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-0">Your Attempt History</h5>
+                                    <small class="text-muted" id="historySubtitle">Sign in to load your previous attempts.</small>
+                                </div>
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="refreshHistoryBtn">
+                                    Refresh
+                                </button>
+                            </div>
+                            <div class="card-body" id="historyContent">
+                                <div class="text-muted">Enter your name and email, then use “Sign In &amp; Load History”.</div>
+                            </div>
+                        </div>
+
+                        <form id="userForm" class="mt-4">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="agreement" required>
+                                <label class="form-check-label" for="agreement">
+                                    I understand this is a practice exam for preparation purposes only
+                                </label>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-2 mb-4">
+                                <button type="button" class="btn btn-outline-primary" id="signInBtn">
+                                    Sign In &amp; Load History
+                                </button>
+                                <button type="button" class="btn btn-outline-danger" id="signOutBtn" style="display: none;">
+                                    Sign Out
+                                </button>
+                            </div>
+
+                            <div class="d-flex gap-2 mb-3" role="group" aria-label="Exam family selection">
+                            <button type="button" class="btn btn-primary flex-fill" data-exam-family="capm">
+                                CAPM
+                            </button>
+                            <button type="button" class="btn btn-outline-primary flex-fill" data-exam-family="pmp">
+                                PMP
+                            </button>
+                        </div>
+
+                        <div id="capmOptions">
+                            <div class="row g-3">
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-success h-100 card-hover" tabindex="0">
+                                        <div class="card-header bg-success text-white">
+                                            <h5 class="mb-0">🚀 Short Quiz</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small card-preview" aria-hidden="false">Hover or focus to view details.</p>
+                                            <ul class="list-unstyled card-details" aria-hidden="true" hidden>
+                                                <li>✅ <strong>15 questions</strong></li>
+                                                <li>✅ <strong>10-15 minutes</strong></li>
+                                                <li>✅ Perfect for quick practice</li>
+                                                <li>✅ Instant feedback</li>
+                                                <li>✅ All domains covered</li>
+                                            </ul>
+                                            <button type="button" class="btn btn-success btn-lg w-100 js-start-button" id="startQuizBtn">
+                                                Start Short Quiz
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-primary h-100 card-hover" tabindex="0">
+                                        <div class="card-header bg-primary text-white">
+                                            <h5 class="mb-0">🎯 Full Mock Exam</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small card-preview" aria-hidden="false">Hover or focus to view details.</p>
+                                            <ul class="list-unstyled card-details" aria-hidden="true" hidden>
+                                                <li>✅ <strong>150 questions</strong></li>
+                                                <li>✅ <strong>3 hours duration</strong></li>
+                                                <li>✅ Complete exam simulation</li>
+                                                <li>✅ Detailed PDF report</li>
+                                                <li>✅ Domain performance analysis</li>
+                                            </ul>
+                                            <button type="button" class="btn btn-primary btn-lg w-100 js-start-button" id="startExamBtn">
+                                                Start Mock Exam
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="card border-danger h-100 card-hover" tabindex="0">
+                                        <div class="card-header bg-danger text-white">
+                                            <h5 class="mb-0">🔥 Hard Question Drill</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="text-muted small card-preview" aria-hidden="false">Hover or focus to view details.</p>
+                                            <ul class="list-unstyled card-details" aria-hidden="true" hidden>
+                                                <li>💥 <strong>20 scenario-based questions</strong></li>
+                                                <li>💥 Advanced EV, governance, hybrid dilemmas</li>
+                                                <li>💥 Forces you to apply PMI ECO concepts deeply</li>
+                                                <li>💥 Ideal for final-stage CAPM mastery</li>
+                                            </ul>
+                                            <button type="button" class="btn btn-danger btn-lg w-100 js-start-button" id="startHardBtn">
+                                                Start Hard Drill
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="pmpOptions" class="d-none mt-2">
+                            <div class="card border-dark h-100 card-hover" tabindex="0">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="mb-0">🏆 PMP Mock Exam</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted small card-preview" aria-hidden="false">Hover or focus to view details.</p>
+                                    <ul class="list-unstyled card-details" aria-hidden="true" hidden>
+                                        <li>🎓 <strong>150 expert-level questions</strong></li>
+                                        <li>🧠 Multi-select situational analysis</li>
+                                        <li>📊 Full PMI ECO coverage (People / Process / Business Environment)</li>
+                                        <li>📝 Includes explanations &amp; performance breakdown</li>
+                                    </ul>
+                                    <button type="button" class="btn btn-dark btn-lg w-100 js-start-button" id="startPmpExamBtn">
+                                        Start PMP Mock Exam
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="alert alert-warning mt-3 mb-0">
+                                <small><strong>Heads up:</strong> PMP scenarios may require selecting multiple correct answers. Choose every option that applies before submitting.</small>
+                            </div>
+                        </div>
+
+                        </form>
+
+                        <div class="card mt-3">
+                            <div class="card-body text-center">
+                                <h5 class="card-title mb-2">Practice Sections</h5>
+                                <p class="text-muted mb-3">Target specific topics like Earned Value or PERT with focused drills.</p>
+                                <a class="btn btn-outline-dark" href="/practice">Open Practice Sections</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">What to Expect in Explanations</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-3">Every question you review now includes context to help you understand the reasoning—not just whether you were right or wrong.</p>
+                        <ul class="mb-0">
+                            <li><strong>PMBOK grounding:</strong> See the exact concept or process group each answer references so you can link it back to the guide.</li>
+                            <li><strong>Why each distractor fails:</strong> Explanations call out the traps and misreads that make alternative choices tempting.</li>
+                            <li><strong>Scenario walk-throughs:</strong> Complex, multi-step questions spell out the situational cues and recommended PMI-aligned response.</li>
+                            <li><strong>Additional resources:</strong> When relevant, you’ll find quick pointers to formulas, ECO domains, or glossary terms for deeper study.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        const historyContent = document.getElementById('historyContent');
+        const historySubtitle = document.getElementById('historySubtitle');
+        const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
+        const signInBtn = document.getElementById('signInBtn');
+        const signOutBtn = document.getElementById('signOutBtn');
+        const startButtons = document.querySelectorAll('.js-start-button');
+        const examToggleButtons = document.querySelectorAll('[data-exam-family]');
+        const capmOptions = document.getElementById('capmOptions');
+        const pmpOptions = document.getElementById('pmpOptions');
+        let selectedExamFamily = 'capm';
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const agreementCheckbox = document.getElementById('agreement');
+
+        let currentProfile = null;
+
+        function updateExamFamilySections() {
+            examToggleButtons.forEach(button => {
+                const isActive = button.dataset.examFamily === selectedExamFamily;
+                button.classList.toggle('btn-primary', isActive);
+                button.classList.toggle('btn-outline-primary', !isActive);
+            });
+
+            if (capmOptions) {
+                capmOptions.classList.toggle('d-none', selectedExamFamily !== 'capm');
+            }
+            if (pmpOptions) {
+                pmpOptions.classList.toggle('d-none', selectedExamFamily !== 'pmp');
+            }
+        }
+
+        function selectExamFamily(family) {
+            selectedExamFamily = family === 'pmp' ? 'pmp' : 'capm';
+            updateExamFamilySections();
+        }
+
+        function notify(message, type = 'info') {
+            if (window.ExamUtils && typeof window.ExamUtils.showAlert === 'function') {
+                window.ExamUtils.showAlert(message, type);
+            } else {
+                window.alert(message);
+            }
+        }
+
+        function loadStoredUserProfile() {
+            try {
+                const raw = localStorage.getItem('capmUserProfile');
+                return raw ? JSON.parse(raw) : null;
+            } catch (error) {
+                console.warn('Failed to read stored user profile:', error);
+                return null;
+            }
+        }
+
+        function saveUserProfile(profile) {
+            try {
+                localStorage.setItem('capmUserProfile', JSON.stringify(profile));
+            } catch (error) {
+                console.warn('Failed to persist user profile:', error);
+            }
+        }
+
+        function updateHistoryControls() {
+            const signedIn = Boolean(currentProfile);
+
+            refreshHistoryBtn.disabled = !signedIn;
+            historySubtitle.textContent = signedIn
+                ? `${currentProfile.name} (${currentProfile.email})`
+                : 'Sign in to load your previous attempts.';
+
+            signOutBtn.style.display = signedIn ? 'inline-block' : 'none';
+            signOutBtn.disabled = !signedIn;
+
+            signInBtn.style.display = signedIn ? 'none' : 'inline-block';
+
+            startButtons.forEach(button => {
+                button.disabled = !signedIn;
+                button.classList.toggle('disabled', !signedIn);
+                if (!signedIn) {
+                    button.setAttribute('aria-disabled', 'true');
+                } else {
+                    button.removeAttribute('aria-disabled');
+                }
+            });
+        }
+
+        function formatDateTime(isoString) {
+            try {
+                const date = new Date(isoString);
+                if (Number.isNaN(date.getTime())) {
+                    return '—';
+                }
+                return date.toLocaleString();
+            } catch (error) {
+                return '—';
+            }
+        }
+
+        function renderHistory(attempts) {
+            updateHistoryControls();
+
+            if (!Array.isArray(attempts) || attempts.length === 0) {
+                historyContent.innerHTML = '<div class="text-muted">No attempts recorded yet. Take your first quiz or exam to see them here.</div>';
+                return;
+            }
+
+            const tableWrapper = document.createElement('div');
+            tableWrapper.className = 'table-responsive';
+
+            const rows = attempts.map(item => {
+                const submitted = item.score !== null && item.score !== undefined;
+                const inProgress = !submitted;
+                const scoreValue = submitted ? Number(item.score) : null;
+                const maxScore = Number(item.max_score || item.question_count || 0);
+                const ratio = submitted && maxScore ? scoreValue / maxScore : 0;
+                const statusBadge = inProgress
+                    ? '<span class="badge bg-warning text-dark">In Progress</span>'
+                    : `<span class="badge ${ratio >= 0.7 ? 'bg-success' : 'bg-danger'}">${ratio >= 0.7 ? 'Pass' : 'Fail'}</span>`;
+
+                let typeBadge = '<span class="badge bg-primary-subtle text-primary">Mock Exam</span>';
+                if (item.attempt_type === 'Short Quiz') {
+                    typeBadge = '<span class="badge bg-success-subtle text-success">Short Quiz</span>';
+                } else if (item.attempt_type === 'Hard Drill') {
+                    typeBadge = '<span class="badge bg-danger-subtle text-danger">Hard Drill</span>';
+                } else if (item.attempt_type === 'PMP Mock Exam') {
+                    typeBadge = '<span class="badge bg-dark text-white">PMP Mock Exam</span>';
+                }
+
+                const scoreText = submitted && Number.isFinite(scoreValue) && Number.isFinite(maxScore)
+                    ? `${scoreValue}/${maxScore}`
+                    : '--';
+                const startedAt = formatDateTime(item.started_at);
+                const endedAt = item.ended_at ? formatDateTime(item.ended_at) : '—';
+
+                const actionsHtml = inProgress
+                    ? `<div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-primary btn-sm" data-action="continue" data-attempt-id="${item.attempt_id}" data-attempt-type="${item.attempt_type}" aria-label="Continue attempt">
+                                <i class="bi bi-pencil-square" aria-hidden="true"></i>
+                                <span class="visually-hidden">Continue</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-action="delete" data-attempt-id="${item.attempt_id}" aria-label="Delete attempt">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                                <span class="visually-hidden">Delete</span>
+                            </button>
+                       </div>`
+                    : `<a href="/results/${item.attempt_id}" class="btn btn-outline-primary btn-sm" aria-label="View results">
+                            <i class="bi bi-eye" aria-hidden="true"></i>
+                            <span class="visually-hidden">View</span>
+                       </a>`;
+
+                return `
+                    <tr>
+                        <td class="text-nowrap">${startedAt}</td>
+                        <td>${typeBadge}</td>
+                        <td>${scoreText}</td>
+                        <td>${statusBadge}</td>
+                        <td>${endedAt}</td>
+                        <td>${actionsHtml}</td>
+                    </tr>`;
+            }).join('');
+
+            tableWrapper.innerHTML = `
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Started</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Score</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Completed</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+
+            historyContent.innerHTML = '';
+            historyContent.appendChild(tableWrapper);
+
+            attachHistoryActionHandlers();
+        }
+
+        function attachHistoryActionHandlers() {
+            historyContent.querySelectorAll('[data-action="continue"]').forEach(button => {
+                button.addEventListener('click', event => {
+                    const { attemptId, attemptType } = event.currentTarget.dataset;
+                    continueAttempt(attemptId, attemptType);
+                });
+            });
+
+            historyContent.querySelectorAll('[data-action="delete"]').forEach(button => {
+                button.addEventListener('click', handleDeleteClick);
+            });
+        }
+
+        function continueAttempt(attemptId, attemptType) {
+            if (!attemptId) {
+                return;
+            }
+
+            const normalizedType = (attemptType || '').toLowerCase();
+            let target = `/exam/${attemptId}`;
+
+            if (normalizedType === 'short quiz') {
+                target = `/quiz/${attemptId}`;
+            }
+
+            window.location.href = target;
+        }
+
+        async function handleDeleteClick(event) {
+            if (!currentProfile) {
+                notify('Sign in first to manage attempts.', 'warning');
+                return;
+            }
+
+            const triggerButton = event.currentTarget;
+            const attemptId = triggerButton.dataset.attemptId;
+
+            if (!attemptId) {
+                return;
+            }
+
+            const previousConfirm = document.querySelector('.global-alert-wrapper [data-alert-role="delete-confirm"]');
+            if (previousConfirm) {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    const instance = bootstrap.Alert.getOrCreateInstance(previousConfirm);
+                    if (instance) {
+                        instance.close();
+                    }
+                } else {
+                    previousConfirm.remove();
+                }
+            }
+
+            triggerButton.disabled = true;
+
+            const confirmAlert = showAlert(
+                `<div data-alert-role="delete-confirm" data-attempt-id="${attemptId}">
+                    <div class="fw-semibold">Delete this in-progress attempt?</div>
+                    <p class="mb-3 small text-muted">This action cannot be undone.</p>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-danger btn-sm" data-role="confirm-delete">Delete</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-role="cancel-delete">Cancel</button>
+                    </div>
+                </div>`,
+                'warning',
+                { autoHide: false }
+            );
+
+            if (!confirmAlert) {
+                triggerButton.disabled = false;
+                if (!window.confirm('Delete this in-progress attempt? This cannot be undone.')) {
+                    return;
+                }
+                try {
+                    await performDeletion(attemptId, triggerButton);
+                } catch (error) {
+                    notify(`Failed to delete attempt: ${error.message}`, 'danger');
+                    if (triggerButton.isConnected) {
+                        triggerButton.disabled = false;
+                    }
+                }
+                return;
+            }
+
+            const closeAlert = () => {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                    const instance = bootstrap.Alert.getOrCreateInstance(confirmAlert);
+                    if (instance) {
+                        instance.close();
+                    }
+                } else {
+                    confirmAlert.remove();
+                }
+            };
+
+            const confirmBtn = confirmAlert.querySelector('[data-role="confirm-delete"]');
+            const cancelBtn = confirmAlert.querySelector('[data-role="cancel-delete"]');
+
+            const resetTrigger = () => {
+                if (triggerButton.isConnected) {
+                    triggerButton.disabled = false;
+                }
+            };
+
+            cancelBtn?.addEventListener('click', () => {
+                resetTrigger();
+                closeAlert();
+            });
+
+            confirmBtn?.addEventListener('click', async () => {
+                confirmBtn.disabled = true;
+                const originalLabel = confirmBtn.textContent;
+                confirmBtn.textContent = 'Deleting…';
+
+                try {
+                    await performDeletion(attemptId, triggerButton);
+                    closeAlert();
+                } catch (error) {
+                    notify(`Failed to delete attempt: ${error.message}`, 'danger');
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = originalLabel;
+                    resetTrigger();
+                }
+            });
+
+            async function performDeletion(id, buttonRef) {
+                const response = await fetch(`/api/attempts/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ user_id: currentProfile.id })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `HTTP ${response.status}`);
+                }
+
+                if (window.ExamUtils && typeof window.ExamUtils.clearExamProgress === 'function') {
+                    window.ExamUtils.clearExamProgress(id);
+                }
+
+                notify('Attempt deleted.', 'success');
+                refreshHistory({ showSpinner: true });
+
+                if (buttonRef && buttonRef.isConnected) {
+                    buttonRef.disabled = true;
+                }
+            }
+        }
+
+        async function refreshHistory({ showSpinner = true } = {}) {
+            updateHistoryControls();
+
+            if (!currentProfile) {
+                historyContent.innerHTML = '<div class="text-muted">Enter your name and email, then use “Sign In &amp; Load History”.</div>';
+                return;
+            }
+
+            const originalText = refreshHistoryBtn.innerHTML;
+            if (showSpinner) {
+                historyContent.innerHTML = '<div class="text-muted">Loading history...</div>';
+                refreshHistoryBtn.disabled = true;
+                refreshHistoryBtn.innerHTML = 'Refreshing…';
+            }
+
+            try {
+                const response = await fetch(`/api/users/${currentProfile.id}/attempts`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `HTTP ${response.status}`);
+                }
+
+                const attempts = await response.json();
+                renderHistory(attempts);
+            } catch (error) {
+                console.error('Failed to refresh history:', error);
+                historyContent.innerHTML = '<div class="alert alert-danger">Unable to load history right now. Please try again later.</div>';
+            } finally {
+                refreshHistoryBtn.innerHTML = originalText;
+                refreshHistoryBtn.disabled = !currentProfile;
+            }
+        }
+
+        function signOut() {
+            signOutBtn.disabled = true;
+            try {
+                localStorage.removeItem('capmUserProfile');
+            } catch (error) {
+                console.warn('Failed to clear stored user profile:', error);
+            }
+
+            currentProfile = null;
+            historyContent.innerHTML = '<div class="text-muted">Enter your name and email, then use “Sign In &amp; Load History”.</div>';
+            notify('Signed out. Sign in again when you are ready.', 'info');
+            updateHistoryControls();
+        }
+
+        async function loginAndLoadHistory() {
+            const profile = ensureProfile(false);
+            if (!profile) {
+                return;
+            }
+
+            const { name, email } = profile;
+
+            const originalText = signInBtn.innerHTML;
+            signInBtn.disabled = true;
+            signInBtn.innerHTML = 'Signing in…';
+
+            try {
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentProfile = {
+                    id: data.user_id,
+                    name: data.name || name,
+                    email: data.email || email
+                };
+
+                saveUserProfile(currentProfile);
+                updateHistoryControls();
+                renderHistory(Array.isArray(data.attempts) ? data.attempts : []);
+                notify('Signed in successfully.', 'success');
+            } catch (error) {
+                notify(`Unable to sign in: ${error.message}`, 'danger');
+            } finally {
+                signInBtn.innerHTML = originalText;
+                signInBtn.disabled = false;
+            }
+        }
+
+        function hydrateFromStorage() {
+            currentProfile = loadStoredUserProfile();
+
+            if (currentProfile) {
+                if (currentProfile.name) {
+                    nameInput.value = currentProfile.name;
+                }
+                if (currentProfile.email) {
+                    emailInput.value = currentProfile.email;
+                }
+            }
+
+            updateHistoryControls();
+        }
+
+        function ensureProfile(requireAgreement = true) {
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim();
+
+            if (!name) {
+                notify('Please enter your full name.', 'warning');
+                return null;
+            }
+            if (!email) {
+                notify('Please enter your email address.', 'warning');
+                return null;
+            }
+            if (requireAgreement && !agreementCheckbox.checked) {
+                notify('Please accept the agreement to continue.', 'warning');
+                return null;
+            }
+
+            return { name, email };
+        }
+
+        async function startExam(type) {
+            const profile = ensureProfile(true);
+            if (!profile) return;
+
+            const { name, email } = profile;
+
+            const buttonMap = {
+                quiz: 'startQuizBtn',
+                exam: 'startExamBtn',
+                hard: 'startHardBtn',
+                pmp: 'startPmpExamBtn'
+            };
+            const btnId = buttonMap[type] || 'startExamBtn';
+            const btn = document.getElementById(btnId);
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            const loadingText = {
+                quiz: 'Starting Quiz...',
+                exam: 'Starting Exam...',
+                hard: 'Starting Hard Drill...',
+                pmp: 'Starting PMP Exam...'
+            };
+            btn.innerHTML = loadingText[type] || 'Starting...';
+
+            try {
+                const endpointMap = {
+                    quiz: '/api/quiz/start',
+                    exam: '/api/exams/start',
+                    hard: '/api/hard/start',
+                    pmp: '/api/pmp/start'
+                };
+                const endpoint = endpointMap[type] || '/api/exams/start';
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, email })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentProfile = {
+                        id: data.user_id,
+                        name,
+                        email
+                    };
+                    saveUserProfile(currentProfile);
+                    updateHistoryControls();
+
+                    const targetPage = type === 'quiz'
+                        ? `/quiz/${data.attempt_id}`
+                        : `/exam/${data.attempt_id}`;
+
+                    window.location.href = targetPage;
+                } else {
+                    const error = await response.text();
+                    throw new Error(error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                notify(`Error starting ${type}: ${error.message}`, 'danger');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        if (examToggleButtons.length) {
+            examToggleButtons.forEach(button => {
+                button.addEventListener('click', () => selectExamFamily(button.dataset.examFamily));
+            });
+            selectExamFamily(selectedExamFamily);
+        }
+
+        document.getElementById('startQuizBtn').addEventListener('click', () => startExam('quiz'));
+        document.getElementById('startExamBtn').addEventListener('click', () => startExam('exam'));
+        document.getElementById('startHardBtn').addEventListener('click', () => startExam('hard'));
+        document.getElementById('startPmpExamBtn').addEventListener('click', () => startExam('pmp'));
+        signInBtn.addEventListener('click', loginAndLoadHistory);
+        refreshHistoryBtn.addEventListener('click', () => refreshHistory({ showSpinner: true }));
+        signOutBtn.addEventListener('click', signOut);
+
+        const hoverCards = document.querySelectorAll('.card-hover');
+        hoverCards.forEach((card) => {
+            const details = card.querySelector('.card-details');
+            const preview = card.querySelector('.card-preview');
+
+            const activate = () => {
+                card.classList.add('is-active');
+                details?.setAttribute('aria-hidden', 'false');
+                preview?.setAttribute('aria-hidden', 'true');
+                details?.removeAttribute('hidden');
+            };
+            const deactivate = () => {
+                card.classList.remove('is-active');
+                details?.setAttribute('aria-hidden', 'true');
+                preview?.setAttribute('aria-hidden', 'false');
+                details?.setAttribute('hidden', '');
+            };
+
+            card.addEventListener('mouseenter', activate);
+            card.addEventListener('mouseleave', deactivate);
+            card.addEventListener('focusin', activate);
+            card.addEventListener('focusout', deactivate);
+
+            card.addEventListener('touchstart', () => {
+                if (!card.classList.contains('is-active')) {
+                    activate();
+                    setTimeout(deactivate, 3000);
+                }
+            }, { passive: true });
+        });
+
+        hydrateFromStorage();
+        refreshHistory({ showSpinner: false });
+    </script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPM Short Quiz - Taking Quiz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+        <div class="container">
+            <a class="navbar-brand" href="/">CAPM Short Quiz</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text" id="progressText">Loading...</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="global-alert-wrapper" id="globalAlertContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="container mt-4">
+        <div id="loadingDiv" class="text-center">
+            <div class="spinner-border text-success" role="status">
+                <span class="visually-hidden">Loading questions...</span>
+            </div>
+            <p class="mt-2">Loading quiz questions...</p>
+        </div>
+
+        <div id="quizDiv" style="display: none;">
+            <div class="alert alert-info">
+                <strong>Short Quiz Mode:</strong> 15 questions selected from authentic PMBOK 7th Edition content. Perfect for quick practice sessions!
+            </div>
+
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center bg-success text-white">
+                            <h5 class="mb-0" id="questionTitle">Question 1 of 15</h5>
+                            <div>
+                                <button class="btn btn-outline-light btn-sm" id="prevBtn" onclick="previousQuestion()" disabled>Previous</button>
+                                <button class="btn btn-light btn-sm" id="nextBtn" onclick="nextQuestion()">Next</button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="questionContent">
+                                <p id="questionText" class="lead"></p>
+                                <div id="choicesContainer"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">Question Navigator</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="questionNav" class="d-grid gap-1"></div>
+                            <hr>
+                            <button class="btn btn-success w-100" onclick="submitQuiz()" id="submitBtn">
+                                Submit Quiz
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-body text-center">
+                            <h6 class="text-uppercase text-muted small">Formula Reference</h6>
+                            <p class="small mb-3">Need the equations? Open the full formula sheet in a new tab.</p>
+                            <a class="btn btn-outline-success btn-sm" href="/formula" target="_blank" rel="noopener">
+                                View Formulas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Confirmation Modal -->
+    <div class="modal fade" id="submitModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Submit Quiz</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to submit your quiz?</p>
+                    <p><span id="answeredCount">0</span> of 15 questions answered.</p>
+                    <p class="text-warning"><strong>Note:</strong> You cannot change your answers after submission.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="confirmSubmit()">Submit Quiz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        let questions = [];
+        let currentQuestion = 0;
+        let answers = {};
+        let attemptId = '';
+
+        const notifyUser = (message, type = 'danger') => {
+            if (window.ExamUtils && typeof window.ExamUtils.showAlert === 'function') {
+                window.ExamUtils.showAlert(message, type);
+            } else {
+                window.alert(message);
+            }
+        };
+
+        // Get attempt ID from URL
+        const pathParts = window.location.pathname.split('/');
+        attemptId = pathParts[pathParts.length - 1];
+
+        // Load questions when page loads
+        window.addEventListener('load', loadQuestions);
+
+        async function loadQuestions() {
+            try {
+                const response = await fetch(`/api/exams/${attemptId}/questions`);
+                if (response.ok) {
+                    questions = await response.json();
+                    initializeQuiz();
+                } else {
+                    notifyUser('Failed to load questions. Please try again.', 'danger');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                notifyUser('Network error loading questions: ' + error.message, 'danger');
+                window.location.href = '/';
+            }
+        }
+
+        function initializeQuiz() {
+            document.getElementById('loadingDiv').style.display = 'none';
+            document.getElementById('quizDiv').style.display = 'block';
+
+            // Create question navigator
+            createQuestionNavigator();
+
+            // Show first question
+            showQuestion(0);
+            updateProgress();
+        }
+
+        function createQuestionNavigator() {
+            const nav = document.getElementById('questionNav');
+            nav.innerHTML = '';
+
+            for (let i = 0; i < questions.length; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'btn btn-outline-success btn-sm';
+                btn.textContent = i + 1;
+                btn.onclick = () => showQuestion(i);
+                btn.id = `navBtn${i}`;
+                nav.appendChild(btn);
+            }
+        }
+
+        function showQuestion(index) {
+            if (index < 0 || index >= questions.length) return;
+
+            currentQuestion = index;
+            const question = questions[index];
+            const isMultiSelect = Boolean(question.is_multi_select);
+
+            if (!Array.isArray(answers[question.id])) {
+                answers[question.id] = [];
+            }
+
+            document.getElementById('questionTitle').textContent = `Question ${index + 1} of ${questions.length}`;
+            document.getElementById('questionText').textContent = question.prompt;
+
+            const choicesContainer = document.getElementById('choicesContainer');
+            choicesContainer.innerHTML = '';
+
+            if (isMultiSelect) {
+                const hint = document.createElement('p');
+                hint.className = 'text-muted fw-semibold';
+                hint.textContent = 'Select all that apply.';
+                choicesContainer.appendChild(hint);
+            }
+
+            question.choices.forEach(choice => {
+                const div = document.createElement('div');
+                div.className = 'form-check mb-2';
+
+                const input = document.createElement('input');
+                input.className = 'form-check-input';
+                input.type = isMultiSelect ? 'checkbox' : 'radio';
+                input.name = isMultiSelect ? `question${question.id}_${choice.id}` : `question${question.id}`;
+                input.value = choice.id;
+                input.id = `choice${choice.id}`;
+                input.dataset.questionId = question.id;
+
+                const currentSelections = answers[question.id];
+                if (Array.isArray(currentSelections) && currentSelections.includes(choice.id)) {
+                    input.checked = true;
+                }
+
+                input.addEventListener('change', () => {
+                    if (isMultiSelect) {
+                        let selections = Array.isArray(answers[question.id]) ? [...answers[question.id]] : [];
+                        if (input.checked) {
+                            if (!selections.includes(choice.id)) {
+                                selections.push(choice.id);
+                            }
+                        } else {
+                            selections = selections.filter(id => id !== choice.id);
+                        }
+                        answers[question.id] = selections;
+                    } else {
+                        answers[question.id] = [choice.id];
+                    }
+                    updateQuestionNavigator();
+                    updateProgress();
+                });
+
+                const label = document.createElement('label');
+                label.className = 'form-check-label';
+                label.htmlFor = `choice${choice.id}`;
+                label.innerHTML = `<strong>${choice.label}.</strong> ${choice.text}`;
+
+                div.appendChild(input);
+                div.appendChild(label);
+                choicesContainer.appendChild(div);
+            });
+
+            document.getElementById('prevBtn').disabled = index === 0;
+            document.getElementById('nextBtn').disabled = index === questions.length - 1;
+
+            updateQuestionNavigator();
+        }
+
+        function updateQuestionNavigator() {
+            for (let i = 0; i < questions.length; i++) {
+                const btn = document.getElementById(`navBtn${i}`);
+                const questionId = questions[i].id;
+                const selections = Array.isArray(answers[questionId]) ? answers[questionId] : [];
+
+                if (selections.length > 0) {
+                    btn.className = 'btn btn-success btn-sm';
+                } else {
+                    btn.className = 'btn btn-outline-success btn-sm';
+                }
+
+                if (i === currentQuestion) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            }
+        }
+
+        function updateProgress() {
+            const answered = Object.values(answers).filter(entry => Array.isArray(entry) && entry.length > 0).length;
+            document.getElementById('progressText').textContent = `${answered}/${questions.length} answered`;
+            document.getElementById('answeredCount').textContent = answered;
+        }
+
+        function previousQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        function submitQuiz() {
+            updateProgress();
+            const modal = new bootstrap.Modal(document.getElementById('submitModal'));
+            modal.show();
+        }
+
+        async function confirmSubmit() {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            // Prepare submission data
+            const submission = {
+                answers: Object.entries(answers)
+                    .filter(([, choiceIds]) => Array.isArray(choiceIds) && choiceIds.length > 0)
+                    .map(([questionId, choiceIds]) => ({
+                        question_id: parseInt(questionId, 10),
+                        choice_ids: choiceIds.map(id => parseInt(id, 10))
+                    }))
+            };
+
+            try {
+                const response = await fetch(`/api/exams/${attemptId}/submit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(submission)
+                });
+
+                if (response.ok) {
+                    window.location.href = `/results/${attemptId}`;
+                } else {
+                    const error = await response.text();
+                    notifyUser('Error submitting quiz: ' + error, 'danger');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit Quiz';
+                }
+            } catch (error) {
+                notifyUser('Network error submitting quiz: ' + error.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Quiz';
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (event) => {
+            switch (event.key) {
+                case 'ArrowLeft':
+                    if (event.ctrlKey) {
+                        event.preventDefault();
+                        previousQuestion();
+                    }
+                    break;
+                case 'ArrowRight':
+                    if (event.ctrlKey) {
+                        event.preventDefault();
+                        nextQuestion();
+                    }
+                    break;
+            }
+        });
+
+        // Prevent accidental page reload
+        window.addEventListener('beforeunload', function (event) {
+            event.preventDefault();
+            event.returnValue = 'You have a quiz in progress. Are you sure you want to leave?';
+        });
+    </script>
+</body>
+</html>

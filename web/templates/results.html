@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAPM Mock Exam - Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">CAPM Mock Exam</a>
+        </div>
+    </nav>
+
+    <div class="global-alert-wrapper" id="globalAlertContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <div class="container mt-4">
+        <div id="loadingDiv" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading results...</span>
+            </div>
+            <p class="mt-2">Loading your exam results...</p>
+        </div>
+
+        <div id="resultsDiv" style="display: none;">
+            <!-- Score Summary -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h2 class="mb-0">Exam Results</h2>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h3 id="scoreDisplay" class="display-4">0/150</h3>
+                                    <h5 id="percentageDisplay">0%</h5>
+                                </div>
+                                <div class="col-md-4">
+                                    <div id="statusBadge" class="badge fs-3 p-3">LOADING</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <a href="#" id="downloadPdfBtn" class="btn btn-success btn-lg" aria-label="Download PDF report" title="Download PDF report">
+                                            <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Download PDF report</span>
+                                        </a>
+                                        <a href="/" class="btn btn-primary btn-lg" aria-label="Take another exam" title="Take another exam">
+                                            <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+                                            <span class="visually-hidden">Take another exam</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Domain Performance -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Performance by Domain</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="domainStats"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attempt History -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Attempt History</h5>
+                            <small class="text-muted" id="historySubtitle"></small>
+                        </div>
+                        <div class="card-body" id="historyBody">
+                            <div class="text-center text-muted">Loading history...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Review -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Question Review</h5>
+                            <div class="btn-group" role="group">
+                                <input type="radio" class="btn-check" name="filterOptions" id="showAll" checked>
+                                <label class="btn btn-outline-primary" for="showAll">All</label>
+
+                                <input type="radio" class="btn-check" name="filterOptions" id="showCorrect">
+                                <label class="btn btn-outline-success" for="showCorrect">Correct</label>
+
+                                <input type="radio" class="btn-check" name="filterOptions" id="showIncorrect">
+                                <label class="btn btn-outline-danger" for="showIncorrect">Incorrect</label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div id="questionReview"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/app.js"></script>
+    <script>
+        const notifyUser = (message, type = 'danger') => {
+            if (window.ExamUtils && typeof window.ExamUtils.showAlert === 'function') {
+                window.ExamUtils.showAlert(message, type);
+            } else {
+                window.alert(message);
+            }
+        };
+        const USER_PROFILE_KEY = 'capmUserProfile';
+        let examResult = null;
+        let attemptId = '';
+        let currentFilter = 'all';
+        let questionResults = [];
+        let userProfile = loadStoredUserProfile();
+
+        // Get attempt ID from URL
+        const pathParts = window.location.pathname.split('/');
+        attemptId = pathParts[pathParts.length - 1];
+
+        // Load results when page loads
+        window.addEventListener('load', loadResults);
+
+        // Filter event listeners
+        document.getElementById('showAll').addEventListener('change', () => filterQuestions('all'));
+        document.getElementById('showCorrect').addEventListener('change', () => filterQuestions('correct'));
+        document.getElementById('showIncorrect').addEventListener('change', () => filterQuestions('incorrect'));
+
+        async function loadResults() {
+            try {
+                const response = await fetch(`/api/exams/${attemptId}/results`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                examResult = await response.json();
+                persistUserProfile(examResult.user_id);
+                displayResults();
+                await loadAttemptHistory(examResult.user_id);
+
+            } catch (error) {
+                console.error('Error loading results:', error);
+            notifyUser('Failed to load results. Please try again.', 'danger');
+            window.location.href = '/';
+        }
+        }
+
+        function loadStoredUserProfile() {
+            try {
+                const raw = localStorage.getItem(USER_PROFILE_KEY);
+                if (!raw) return null;
+                return JSON.parse(raw);
+            } catch (error) {
+                console.warn('Failed to load stored profile:', error);
+                return null;
+            }
+        }
+
+        function persistUserProfile(userId) {
+            if (!userId) return;
+            try {
+                const profile = userProfile || {};
+                if (profile.id !== userId) {
+                    profile.id = userId;
+                }
+                userProfile = profile;
+                localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(profile));
+            } catch (error) {
+                console.warn('Failed to persist user profile:', error);
+            }
+        }
+
+        function displayResults() {
+            document.getElementById('loadingDiv').style.display = 'none';
+            document.getElementById('resultsDiv').style.display = 'block';
+
+            const percentage = Math.round((examResult.score / examResult.max_score) * 100);
+
+            // Update score display
+            document.getElementById('scoreDisplay').textContent = `${examResult.score}/${examResult.max_score}`;
+            document.getElementById('percentageDisplay').textContent = `${percentage}%`;
+
+            // Update status badge
+            const statusBadge = document.getElementById('statusBadge');
+            if (percentage >= 70) {
+                statusBadge.textContent = 'PASS';
+                statusBadge.className = 'badge bg-success fs-3 p-3';
+            } else {
+                statusBadge.textContent = 'FAIL';
+                statusBadge.className = 'badge bg-danger fs-3 p-3';
+            }
+
+            // Set up PDF download
+            document.getElementById('downloadPdfBtn').href = `/api/exams/${attemptId}/report.pdf`;
+
+            // Cache results with sequence numbers
+            questionResults = (examResult.results || []).map((result, index) => ({
+                ...result,
+                question_number: index + 1
+            }));
+
+            clearStoredAttemptProgress(attemptId);
+
+            // Display domain performance
+            displayDomainStats();
+
+            // Display question review
+            renderQuestions();
+        }
+
+        function displayDomainStats() {
+            const domains = {};
+
+            questionResults.forEach(result => {
+                const domain = result.question?.domain || 'Other';
+                if (!domains[domain]) {
+                    domains[domain] = { correct: 0, total: 0 };
+                }
+
+                domains[domain].total++;
+                if (result.is_correct) {
+                    domains[domain].correct++;
+                }
+            });
+
+            const domainStatsDiv = document.getElementById('domainStats');
+            domainStatsDiv.innerHTML = '';
+
+            if (Object.keys(domains).length === 0) {
+                domainStatsDiv.innerHTML = '<div class="text-center text-muted">No domain data available.</div>';
+                return;
+            }
+
+            Object.entries(domains).forEach(([domain, stats]) => {
+                if (stats.total === 0) {
+                    return;
+                }
+
+                const domainPercentage = Math.round((stats.correct / stats.total) * 100);
+
+                const domainDiv = document.createElement('div');
+                domainDiv.className = 'mb-3';
+                domainDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span><strong>${domain}</strong></span>
+                        <span>${stats.correct}/${stats.total} (${domainPercentage}%)</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar ${domainPercentage >= 70 ? 'bg-success' : 'bg-warning'}"
+                             role="progressbar" style="width: ${domainPercentage}%"></div>
+                    </div>
+                `;
+                domainStatsDiv.appendChild(domainDiv);
+            });
+        }
+
+        function renderQuestions() {
+            const reviewDiv = document.getElementById('questionReview');
+            reviewDiv.innerHTML = '';
+
+            let filteredResults = questionResults;
+
+            if (currentFilter === 'correct') {
+                filteredResults = questionResults.filter(r => r.is_correct);
+            } else if (currentFilter === 'incorrect') {
+                filteredResults = questionResults.filter(r => !r.is_correct);
+            } else {
+                filteredResults = questionResults;
+            }
+
+            if (filteredResults.length === 0) {
+                reviewDiv.innerHTML = '<div class="text-center text-muted">No questions match the current filter.</div>';
+                return;
+            }
+
+            filteredResults.forEach(result => {
+                const userChoiceIds = Array.isArray(result.user_choice_ids) ? result.user_choice_ids : [];
+                const correctChoiceIds = Array.isArray(result.correct_choice_ids) ? result.correct_choice_ids : [];
+
+                const questionDiv = document.createElement('div');
+                let borderClass = 'border-secondary';
+                if (userChoiceIds.length > 0) {
+                    borderClass = result.is_correct ? 'border-success' : 'border-danger';
+                }
+                questionDiv.className = `card mb-3 ${borderClass}`;
+
+                const statusInfo = getQuestionStatus(result, userChoiceIds);
+
+                const header = document.createElement('div');
+                header.className = 'card-header d-flex justify-content-between align-items-center';
+                header.innerHTML = `
+                    <span><strong>Question ${result.question_number}</strong> - ${result.question?.domain || 'Unknown Domain'}</span>
+                    <span class="badge ${statusInfo.badgeClass}">${statusInfo.label}</span>
+                `;
+
+                const body = document.createElement('div');
+                body.className = 'card-body';
+
+                const prompt = document.createElement('p');
+                prompt.className = 'card-text';
+                prompt.textContent = result.question?.prompt || 'Question text unavailable.';
+                body.appendChild(prompt);
+
+                const choiceMap = new Map();
+                (result.question?.choices || []).forEach(choice => {
+                    choiceMap.set(choice.id, choice);
+                });
+
+                const userAnswerDisplay = formatChoiceList(choiceMap, userChoiceIds);
+                const correctAnswerDisplay = formatChoiceList(choiceMap, correctChoiceIds);
+
+                const summary = document.createElement('div');
+                summary.className = 'mb-3';
+                summary.innerHTML = `
+                    <p class="mb-1"><strong>Your Answer:</strong> ${userAnswerDisplay}</p>
+                    <p class="mb-1"><strong>Correct Answer:</strong> ${correctAnswerDisplay}</p>
+                `;
+                body.appendChild(summary);
+
+                const feedbackText = buildDetailedFeedback(result, userChoiceIds, correctChoiceIds, choiceMap);
+                if (feedbackText) {
+                    const feedback = document.createElement('div');
+                    feedback.className = result.is_correct ? 'alert alert-success' : 'alert alert-warning';
+                    feedback.innerHTML = `<strong>${result.is_correct ? 'Insight' : 'Focus Area'}:</strong> ${feedbackText}`;
+                    body.appendChild(feedback);
+                }
+
+                const choicesList = document.createElement('div');
+                choicesList.className = 'list-group mb-3';
+
+                const correctSet = new Set(correctChoiceIds);
+                const userSet = new Set(userChoiceIds);
+
+                (result.question?.choices || []).forEach(choice => {
+                    const choiceElement = document.createElement('div');
+                    const isCorrectChoice = correctSet.has(choice.id);
+                    const isUserChoice = userSet.has(choice.id);
+
+                    let choiceClass = 'list-group-item';
+                    if (isCorrectChoice) {
+                        choiceClass += ' list-group-item-success';
+                    } else if (isUserChoice) {
+                        choiceClass += ' list-group-item-danger';
+                    } else {
+                        choiceClass += ' list-group-item-light';
+                    }
+
+                    const badges = [];
+                    if (isCorrectChoice) {
+                        badges.push('<span class="badge bg-success ms-2">Correct Answer</span>');
+                    }
+                    if (isUserChoice) {
+                        const userBadgeClass = isCorrectChoice ? 'bg-success' : 'bg-primary';
+                        badges.push(`<span class="badge ${userBadgeClass} ms-2">Your Answer</span>`);
+                    }
+
+                    choiceElement.className = `${choiceClass} d-flex justify-content-between align-items-start`;
+                    choiceElement.innerHTML = `
+                        <div><strong>${choice.label}.</strong> ${choice.text}</div>
+                        <div>${badges.join(' ')}</div>
+                    `;
+
+                    choicesList.appendChild(choiceElement);
+                });
+
+                body.appendChild(choicesList);
+
+                if (result.question?.explanation) {
+                    const explanation = document.createElement('div');
+                    explanation.className = 'alert alert-info';
+                    explanation.innerHTML = `<strong>Explanation:</strong> ${result.question.explanation}`;
+                    body.appendChild(explanation);
+                }
+
+                const tipText = getDomainTip(result.question?.domain, result.is_correct);
+                if (tipText) {
+                    const tipDiv = document.createElement('div');
+                    tipDiv.className = 'alert alert-secondary';
+                    tipDiv.innerHTML = `<strong>Tip:</strong> ${tipText}`;
+                    body.appendChild(tipDiv);
+                }
+
+                questionDiv.appendChild(header);
+                questionDiv.appendChild(body);
+
+                reviewDiv.appendChild(questionDiv);
+            });
+        }
+
+        function filterQuestions(filter) {
+            currentFilter = filter;
+            renderQuestions();
+        }
+
+        function getQuestionStatus(result, userChoiceIds = []) {
+            const answered = Array.isArray(userChoiceIds) && userChoiceIds.length > 0;
+            if (!answered) {
+                return { label: 'Not Answered', badgeClass: 'bg-secondary' };
+            }
+
+            if (result.is_correct) {
+                return { label: 'Correct', badgeClass: 'bg-success' };
+            }
+
+            return { label: 'Incorrect', badgeClass: 'bg-danger' };
+        }
+
+        function clearStoredAttemptProgress(id) {
+            if (!id) return;
+            try {
+                localStorage.removeItem(`exam_${id}`);
+            } catch (error) {
+                console.warn('Failed to clear stored attempt progress:', error);
+            }
+        }
+
+        function formatChoiceDisplay(choice) {
+            if (!choice) {
+                return '—';
+            }
+            if (!choice.text || choice.text === choice.label) {
+                return choice.label || `Choice ${choice.id}`;
+            }
+            return `${choice.label}. ${choice.text}`;
+        }
+
+        function formatChoiceList(choiceMap, choiceIds, joiner = '<br>') {
+            if (!Array.isArray(choiceIds) || choiceIds.length === 0) {
+                return '—';
+            }
+
+            const labels = choiceIds
+                .map(id => formatChoiceDisplay(choiceMap.get(id)))
+                .filter(label => label && label !== '—');
+
+            if (labels.length === 0) {
+                return '—';
+            }
+
+            return labels.join(joiner);
+        }
+
+        function buildDetailedFeedback(result, userChoiceIds, correctChoiceIds, choiceMap) {
+            const answered = Array.isArray(userChoiceIds) && userChoiceIds.length > 0;
+            if (!answered) {
+                return 'Question was unanswered. Review the prompt and re-evaluate which option best aligns with PMI guidance before your next attempt.';
+            }
+
+            if (result.is_correct) {
+                return 'Great job—your selections align with PMI expectations. Reinforce this reasoning and practice spotting similar cues in other scenarios.';
+            }
+
+            const correctLabel = formatChoiceList(choiceMap, correctChoiceIds, ', ');
+            const userLabel = formatChoiceList(choiceMap, userChoiceIds, ', ');
+            return `You selected ${userLabel}, but the stronger response is ${correctLabel}. Revisit the scenario to identify the decision factors that point toward the correct combination.`;
+        }
+
+        function getDomainTip(domain, isCorrect) {
+            const tips = {
+                'Project Management Fundamentals': {
+                    correct: 'Keep scanning for stakeholder expectations, governance cues, and ethical considerations—they often separate the best answer from plausible distractors.',
+                    incorrect: 'Re-read PMBOK 7th performance domains and the PMI Code of Ethics to sharpen situational judgment.'
+                },
+                'Predictive Methodologies': {
+                    correct: 'Excellent predictive instincts—continue practicing schedule, cost, and change control calculations under exam pressure.',
+                    incorrect: 'Refresh earned value formulas, critical path logic, and formal change procedures to strengthen predictive decision making.'
+                },
+                'Agile Frameworks': {
+                    correct: 'Your agile mindset is on point—keep reinforcing servant leadership and flow optimization patterns.',
+                    incorrect: 'Review Scrum roles, Kanban signals, and Lean principles to clarify how adaptive teams respond under stress.'
+                },
+                'Business Analysis': {
+                    correct: 'Great BA coverage—continue mapping stakeholder expectations to value delivery techniques.',
+                    incorrect: 'Revisit requirements elicitation, prioritization tools, and change enablement concepts to boost accuracy.'
+                },
+                'Hard Question': {
+                    correct: 'You mastered an exam-level scenario—cement this insight and compare it with related PMI ECO tasks.',
+                    incorrect: 'Dissect the scenario carefully: isolate the value driver, the governance hook, and the PMI ECO domain it maps to.'
+                }
+            };
+
+            const group = tips[domain] || {
+                correct: 'Solid reasoning—keep applying the underlying principle across domains.',
+                incorrect: 'Unpack the scenario and align it with PMI guidance to strengthen your intuition.'
+            };
+
+            return isCorrect ? group.correct : group.incorrect;
+        }
+
+        async function loadAttemptHistory(userId) {
+            const historyBody = document.getElementById('historyBody');
+            const subtitle = document.getElementById('historySubtitle');
+
+            if (!userId) {
+                historyBody.innerHTML = '<div class="text-center text-muted">User information missing.</div>';
+                subtitle.textContent = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/users/${userId}/attempts`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const attempts = await response.json();
+                subtitle.textContent = attempts.length ? `${attempts.length} attempt(s)` : 'No attempts recorded yet';
+
+                if (!attempts.length) {
+                    historyBody.innerHTML = '<div class="text-center text-muted">Take your first quiz or exam to see history here.</div>';
+                    return;
+                }
+
+                const tableWrapper = document.createElement('div');
+                tableWrapper.className = 'table-responsive';
+
+                const rowsHtml = attempts.map(item => {
+                    const isCurrent = item.attempt_id === examResult.attempt_id;
+                    const submitted = item.score !== null && item.score !== undefined;
+                    const scoreValue = submitted ? Number(item.score) : null;
+                    const passRatio = submitted && item.max_score ? scoreValue / item.max_score : 0;
+                    const scoreText = submitted ? `${scoreValue}/${item.max_score}` : '--';
+                    const statusBadge = submitted
+                        ? `<span class="badge ${passRatio >= 0.7 ? 'bg-success' : 'bg-danger'}">${passRatio >= 0.7 ? 'Pass' : 'Fail'}</span>`
+                        : '<span class="badge bg-warning text-dark">In Progress</span>';
+                    let typeBadge;
+                    if (item.attempt_type === 'Short Quiz') {
+                        typeBadge = '<span class="badge bg-success-subtle text-success">Short Quiz</span>';
+                    } else if (item.attempt_type === 'Hard Drill') {
+                        typeBadge = '<span class="badge bg-danger-subtle text-danger">Hard Drill</span>';
+                    } else if (item.attempt_type === 'PMP Mock Exam') {
+                        typeBadge = '<span class="badge bg-dark text-white">PMP Mock Exam</span>';
+                    } else {
+                        typeBadge = '<span class="badge bg-primary-subtle text-primary">Mock Exam</span>';
+                    }
+                    const startedAt = formatDateTime(item.started_at);
+                    const endedAt = item.ended_at ? formatDateTime(item.ended_at) : '—';
+
+                    const actionHtml = submitted
+                        ? `<a class="btn btn-outline-primary btn-sm" href="/results/${item.attempt_id}">View</a>`
+                        : '<span class="text-muted">—</span>';
+
+                    return `
+                        <tr class="${isCurrent ? 'table-info' : ''}">
+                            <td class="text-nowrap">${startedAt}</td>
+                            <td>${typeBadge}</td>
+                            <td>${scoreText}</td>
+                            <td>${statusBadge}</td>
+                            <td>${endedAt}</td>
+                            <td>${actionHtml}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                tableWrapper.innerHTML = `
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col">Started</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Score</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Completed</th>
+                                <th scope="col">Review</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>`;
+
+                historyBody.innerHTML = '';
+                historyBody.appendChild(tableWrapper);
+
+            } catch (error) {
+                console.error('Failed to load attempt history:', error);
+                historyBody.innerHTML = '<div class="text-danger">Unable to load attempt history right now.</div>';
+                document.getElementById('historySubtitle').textContent = '';
+            }
+        }
+
+        function formatDateTime(isoString) {
+            try {
+                const date = new Date(isoString);
+                if (Number.isNaN(date.getTime())) {
+                    return '—';
+                }
+                return date.toLocaleString();
+            } catch (error) {
+                return '—';
+            }
+        }
+    </script>
+</body>
+</html>
